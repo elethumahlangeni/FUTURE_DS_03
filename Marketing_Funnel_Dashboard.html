@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Bank Marketing — Funnel Analysis</title>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f5f6fa;color:#1a2332;font-size:14px}
+header{background:#1a2332;color:#fff;padding:18px 28px;display:flex;align-items:center;gap:12px}
+header h1{font-size:1.1rem;font-weight:600}
+header p{font-size:.8rem;color:#94a3b8;margin-top:2px}
+.sub{font-size:.75rem;background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;margin-left:auto}
+nav{background:#fff;border-bottom:1px solid #e2e8f0;padding:0 28px;display:flex;gap:2px}
+nav button{background:none;border:none;padding:12px 16px;font-size:.83rem;color:#64748b;
+  cursor:pointer;border-bottom:2px solid transparent;font-family:inherit;transition:all .15s}
+nav button:hover{color:#1a2332}
+nav button.on{color:#2563eb;border-bottom-color:#2563eb;font-weight:600}
+main{padding:24px 28px}
+.tab{display:none}.tab.on{display:block}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px}
+.kpi{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px;border-top:3px solid}
+.kpi.b{border-top-color:#2563eb}.kpi.g{border-top-color:#16a34a}
+.kpi.o{border-top-color:#d97706}.kpi.r{border-top-color:#dc2626}
+.kpi-l{font-size:.7rem;color:#64748b;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.kpi-v{font-size:1.7rem;font-weight:700;margin:6px 0 2px;color:#1a2332}
+.kpi-s{font-size:.74rem;color:#94a3b8}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:18px}
+.card h3{font-size:.8rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.4px;margin-bottom:14px}
+.ch{position:relative}
+.h180{height:180px}.h220{height:220px}.h240{height:240px}.h260{height:260px}.h280{height:280px}.h300{height:300px}
+.funnel{display:flex;flex-direction:column;align-items:center;gap:0;padding:8px 0}
+.f-row{display:flex;align-items:center;width:100%;max-width:500px}
+.f-info{width:110px;text-align:right;padding-right:12px;font-size:.78rem;color:#64748b}
+.f-info strong{display:block;font-size:.95rem;font-weight:700;color:#1a2332}
+.f-bar{height:42px;border-radius:5px;display:flex;align-items:center;justify-content:center;
+  font-size:.78rem;font-weight:600;color:#fff}
+.f-conn{display:flex;flex-direction:column;align-items:center;padding:2px 0;width:100%;max-width:500px}
+.f-conn .pass{font-size:.72rem;color:#16a34a;font-weight:600}
+.f-conn .drop{font-size:.68rem;color:#dc2626}
+.pb{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.pb-l{width:130px;font-size:.76rem;color:#475569;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
+.pb-bg{flex:1;height:7px;background:#f1f5f9;border-radius:4px;overflow:hidden}
+.pb-fill{height:100%;border-radius:4px}
+.pb-v{width:42px;font-size:.76rem;font-weight:600;color:#1a2332;text-align:right;flex-shrink:0}
+.recs{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.rec{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px;border-left:4px solid}
+.rec.red{border-left-color:#dc2626}.rec.amber{border-left-color:#d97706}.rec.green{border-left-color:#16a34a}
+.rec-pri{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.rec-pri.r{color:#dc2626}.rec-pri.a{color:#d97706}.rec-pri.g{color:#16a34a}
+.rec-title{font-size:.88rem;font-weight:600;margin-bottom:6px}
+.rec-body{font-size:.78rem;color:#64748b;line-height:1.6}
+.rec-stat{margin-top:8px;font-size:.73rem;background:#f8fafc;border-radius:6px;padding:6px 10px;color:#475569;border-left:2px solid #cbd5e1}
+@media(max-width:700px){.grid2{grid-template-columns:1fr}header,nav,main{padding-left:16px;padding-right:16px}}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Marketing Funnel &amp; Conversion Analysis</h1>
+    <p>UCI Bank Marketing Dataset &middot; 41,188 customer contacts</p>
+  </div>
+  <span class="sub">Future Interns &middot; DS Task 03</span>
+</header>
+
+<nav>
+  <button class="on" onclick="switchTab('overview',this)">Overview</button>
+  <button onclick="switchTab('funnel',this)">Funnel</button>
+  <button onclick="switchTab('campaign',this)">Campaign</button>
+  <button onclick="switchTab('segments',this)">Segments</button>
+  <button onclick="switchTab('recs',this)">Recommendations</button>
+</nav>
+
+<main>
+
+<div id="tab-overview" class="tab on">
+  <div class="kpis">
+    <div class="kpi b"><div class="kpi-l">Total Contacts</div><div class="kpi-v">41,188</div><div class="kpi-s">Customers contacted</div></div>
+    <div class="kpi g"><div class="kpi-l">Conversions</div><div class="kpi-v">4,640</div><div class="kpi-s">Term deposit subscribed</div></div>
+    <div class="kpi o"><div class="kpi-l">Conversion Rate</div><div class="kpi-v">11.3%</div><div class="kpi-s">Overall success rate</div></div>
+    <div class="kpi r"><div class="kpi-l">Avg Call Duration</div><div class="kpi-v">258s</div><div class="kpi-s">&#8776; 4.3 minutes average</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>Conversion by Contact Method</h3><div class="ch h220"><canvas id="c-contact"></canvas></div></div>
+    <div class="card"><h3>Previous Campaign Outcome</h3><div class="ch h220"><canvas id="c-pout"></canvas></div></div>
+  </div>
+  <div class="card"><h3>Conversion Rate by Month (%)</h3><div class="ch h260"><canvas id="c-month"></canvas></div></div>
+</div>
+
+<div id="tab-funnel" class="tab">
+  <div class="grid2">
+    <div class="card"><h3>Conversion Funnel</h3><div class="funnel" id="funnel-vis"></div></div>
+    <div class="card"><h3>Drop-off at Each Stage (%)</h3><div class="ch h300"><canvas id="c-dropoff"></canvas></div></div>
+  </div>
+  <div class="card"><h3>Funnel by Contact Channel</h3><div class="ch h240"><canvas id="c-funnel-ch"></canvas></div></div>
+</div>
+
+<div id="tab-campaign" class="tab">
+  <div class="card" style="margin-bottom:16px"><h3>Monthly Contact Volume vs Conversion Rate</h3><div class="ch h280"><canvas id="c-monthly"></canvas></div></div>
+  <div class="grid2">
+    <div class="card"><h3>Conversion Rate by Number of Calls</h3><div class="ch h240"><canvas id="c-freq"></canvas></div></div>
+    <div class="card"><h3>Conversion Rate by Call Duration</h3><div class="ch h240"><canvas id="c-dur"></canvas></div></div>
+  </div>
+</div>
+
+<div id="tab-segments" class="tab">
+  <div class="grid2">
+    <div class="card"><h3>Conversion Rate by Job (%)</h3><div id="job-bars" style="margin-top:4px"></div></div>
+    <div class="card"><h3>Conversion Rate by Age Group (%)</h3><div class="ch h280"><canvas id="c-age"></canvas></div></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>Conversion Rate by Education (%)</h3><div id="edu-bars" style="margin-top:4px"></div></div>
+    <div class="card"><h3>Subscribed vs Not Subscribed</h3><div class="ch h260"><canvas id="c-donut"></canvas></div></div>
+  </div>
+</div>
+
+<div id="tab-recs" class="tab">
+  <div class="recs" id="recs"></div>
+</div>
+
+</main>
+
+<script>
+var D = {"kpi":{"total":41188,"converted":4640,"conv_rate":11.27,"avg_dur":258},"by_month":{"mar":{"n":546,"c":276,"r":50.5},"apr":{"n":2632,"c":539,"r":20.5},"may":{"n":13769,"c":886,"r":6.4},"jun":{"n":5318,"c":559,"r":10.5},"jul":{"n":7174,"c":649,"r":9.0},"aug":{"n":6178,"c":655,"r":10.6},"sep":{"n":570,"c":256,"r":44.9},"oct":{"n":718,"c":315,"r":43.9},"nov":{"n":4101,"c":416,"r":10.1},"dec":{"n":182,"c":89,"r":48.9}},"by_job":{"admin.":{"n":10422,"c":1352,"r":13.0},"blue-collar":{"n":9254,"c":638,"r":6.9},"entrepreneur":{"n":1456,"c":124,"r":8.5},"housemaid":{"n":1060,"c":106,"r":10.0},"management":{"n":2924,"c":328,"r":11.2},"retired":{"n":1720,"c":434,"r":25.2},"self-employed":{"n":1421,"c":149,"r":10.5},"services":{"n":3969,"c":323,"r":8.1},"student":{"n":875,"c":275,"r":31.4},"technician":{"n":6743,"c":730,"r":10.8},"unemployed":{"n":1014,"c":144,"r":14.2},"unknown":{"n":330,"c":37,"r":11.2}},"by_age":{"18-25":{"n":1661,"c":347,"r":20.9},"26-35":{"n":14847,"c":1740,"r":11.7},"36-45":{"n":12844,"c":1093,"r":8.5},"46-55":{"n":8249,"c":717,"r":8.7},"56-65":{"n":2963,"c":451,"r":15.2},"65+":{"n":619,"c":290,"r":46.8}},"by_edu":{"basic.4y":{"n":4176,"c":428,"r":10.2},"basic.6y":{"n":2292,"c":188,"r":8.2},"basic.9y":{"n":6045,"c":473,"r":7.8},"high.school":{"n":9515,"c":1031,"r":10.8},"illiterate":{"n":18,"c":4,"r":22.2},"professional.course":{"n":5243,"c":595,"r":11.3},"university.degree":{"n":12168,"c":1670,"r":13.7},"unknown":{"n":1731,"c":251,"r":14.5}},"by_contact":{"cellular":{"n":26144,"c":3853,"r":14.7},"telephone":{"n":15044,"c":787,"r":5.2}},"by_dur":{"No Answer":{"n":4,"c":0,"r":0.0},"< 1 min":{"n":4282,"c":1,"r":0.0},"1-2 min":{"n":8631,"c":165,"r":1.9},"2-5 min":{"n":17067,"c":1352,"r":7.9},"5-10 min":{"n":7740,"c":1438,"r":18.6},"10+ min":{"n":3464,"c":1684,"r":48.6}},"by_cam":{"1 Call":{"n":17642,"c":2300,"r":13.0},"2 Calls":{"n":10570,"c":1211,"r":11.5},"3 Calls":{"n":5341,"c":574,"r":10.7},"4-5":{"n":4250,"c":369,"r":8.7},"6-10":{"n":2516,"c":159,"r":6.3},"11+":{"n":869,"c":27,"r":3.1}},"by_pout":{"failure":{"n":4252,"c":605,"r":14.2},"nonexistent":{"n":35563,"c":3141,"r":8.8},"success":{"n":1373,"c":894,"r":65.1}}};
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('on'); });
+  document.querySelectorAll('nav button').forEach(function(b){ b.classList.remove('on'); });
+  document.getElementById('tab-' + name).classList.add('on');
+  btn.classList.add('on');
+}
+
+function mk(id, type, data, opts) {
+  var el = document.getElementById(id);
+  if (!el) { return; }
+  if (el._chart) { el._chart.destroy(); }
+  var defaultOpts = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: '#64748b', font: { size: 11 }, boxWidth: 12 } } },
+    scales: {
+      x: { ticks: { color: '#94a3b8', font: { size: 11 } }, grid: { color: '#f1f5f9' } },
+      y: { ticks: { color: '#94a3b8', font: { size: 11 } }, grid: { color: '#f1f5f9' } }
+    }
+  };
+  if (opts) {
+    if (opts.scales) { defaultOpts.scales = opts.scales; }
+    if (opts.plugins) { defaultOpts.plugins = opts.plugins; }
+    if (opts.indexAxis) { defaultOpts.indexAxis = opts.indexAxis; }
+    if (opts.cutout) { defaultOpts.cutout = opts.cutout; }
+  }
+  el._chart = new Chart(el, { type: type, data: data, options: defaultOpts });
+}
+
+function pbar(lbl, val, max, color) {
+  var w = max > 0 ? Math.round(val / max * 100) : 0;
+  return '<div class="pb"><div class="pb-l" title="' + lbl + '">' + lbl + '</div>' +
+    '<div class="pb-bg"><div class="pb-fill" style="width:' + w + '%;background:' + color + '"></div></div>' +
+    '<div class="pb-v">' + val + '%</div></div>';
+}
+
+function rateColor(v) {
+  return v >= 25 ? '#16a34a' : v >= 12 ? '#2563eb' : v >= 8 ? '#d97706' : '#dc2626';
+}
+
+function buildDashboard() {
+  var GC = '#f1f5f9';
+  var mons = ['mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+
+  // OVERVIEW
+  mk('c-contact', 'bar', {
+    labels: ['Cellular', 'Telephone'],
+    datasets: [
+      { label: 'Contacts', data: [D.by_contact.cellular.n, D.by_contact.telephone.n],
+        backgroundColor: ['rgba(37,99,235,.4)', 'rgba(217,119,6,.4)'], borderRadius: 5 },
+      { label: 'Converted', data: [D.by_contact.cellular.c, D.by_contact.telephone.c],
+        backgroundColor: ['#2563eb', '#d97706'], borderRadius: 5 }
+    ]
+  }, { scales: {
+    x: { ticks: { color: '#94a3b8' }, grid: { color: GC } },
+    y: { ticks: { color: '#94a3b8' }, grid: { color: GC } }
+  }});
+
+  mk('c-pout', 'bar', {
+    labels: ['Prev. Failure', 'No History', 'Prev. Success'],
+    datasets: [{ label: 'Conv Rate %',
+      data: [D.by_pout.failure.r, D.by_pout.nonexistent.r, D.by_pout.success.r],
+      backgroundColor: ['#ef4444', '#94a3b8', '#16a34a'], borderRadius: 6 }]
+  }, { plugins: { legend: { display: false } },
+    scales: {
+      x: { ticks: { color: '#94a3b8' }, grid: { color: GC } },
+      y: { ticks: { color: '#94a3b8', callback: function(v){ return v + '%'; } }, grid: { color: GC } }
+  }});
+
+  mk('c-month', 'bar', {
+    labels: mons.map(function(m){ return m[0].toUpperCase() + m.slice(1); }),
+    datasets: [{ label: 'Conv Rate %',
+      data: mons.map(function(m){ return D.by_month[m].r; }),
+      backgroundColor: mons.map(function(m){ return rateColor(D.by_month[m].r) + 'cc'; }),
+      borderRadius: 5 }]
+  }, { plugins: { legend: { display: false } },
+    scales: {
+      x: { ticks: { color: '#94a3b8' }, grid: { color: GC } },
+      y: { ticks: { color: '#94a3b8', callback: function(v){ return v + '%'; } }, grid: { color: GC } }
+  }});
+
+  // FUNNEL
+  var fStages = [
+    { lbl: 'Contacted',  n: 41188, c: '#2563eb' },
+    { lbl: 'Reached',    n: 41184, c: '#4f46e5' },
+    { lbl: 'Engaged',    n: 28271, c: '#7c3aed' },
+    { lbl: 'Qualified',  n: 12044, c: '#d97706' },
+    { lbl: 'Converted',  n: 4640,  c: '#16a34a' }
+  ];
+  var fv = document.getElementById('funnel-vis');
+  fStages.forEach(function(s, i) {
+    var w = Math.max(15, Math.round(s.n / fStages[0].n * 100));
+    fv.innerHTML += '<div class="f-row"><div class="f-info"><strong>' + s.n.toLocaleString() + '</strong>' + s.lbl + '</div>' +
+      '<div style="flex:1;display:flex;justify-content:center">' +
+      '<div class="f-bar" style="width:' + w + '%;background:' + s.c + '">' + (w > 20 ? s.n.toLocaleString() : '') + '</div>' +
+      '</div></div>';
+    if (i < fStages.length - 1) {
+      var pass = Math.round(fStages[i + 1].n / s.n * 100);
+      fv.innerHTML += '<div class="f-conn"><div class="pass">&#8595; ' + pass + '% pass</div>' +
+        '<div class="drop">' + (100 - pass) + '% lost</div></div>';
+    }
+  });
+
+  var drops = fStages.slice(1).map(function(s, i){ return +(100 - Math.round(s.n / fStages[i].n * 100)); });
+  mk('c-dropoff', 'bar', {
+    labels: ['Contacted→Reached', 'Reached→Engaged', 'Engaged→Qualified', 'Qualified→Converted'],
+    datasets: [{ label: '% Lost', data: drops,
+      backgroundColor: drops.map(function(d){ return d < 5 ? '#16a34a' : d < 30 ? '#d97706' : '#dc2626'; }),
+      borderRadius: 6 }]
+  }, { indexAxis: 'y', plugins: { legend: { display: false } },
+    scales: {
+      x: { ticks: { color: '#94a3b8', callback: function(v){ return v + '%'; } }, grid: { color: GC } },
+      y: { ticks: { color: '#94a3b8' }, grid: { color: GC } }
+  }});
+
+  mk('c-funnel-ch', 'bar', {
+    labels: ['Prospects', 'Engaged', 'Converted'],
+    datasets: [
+      { label: 'Cellular', data: [D.by_contact.cellular.n, Math.round(D.by_contact.cellular.n * .693), D.by_contact.cellular.c],
+        backgroundColor: 'rgba(37,99,235,.7)', borderRadius: 4 },
+      { label: 'Telephone', data: [D.by_contact.telephone.n, Math.round(D.by_contact.telephone.n * .663), D.by_contact.telephone.c],
+        backgroundColor: 'rgba(217,119,6,.7)', borderRadius: 4 }
+    ]
+  }, { scales: {
+    x: { ticks: { color: '#94a3b8' }, grid: { color: GC } },
+    y: { ticks: { color: '#94a3b8' }, grid: { color: GC } }
+  }});
+
+  // CAMPAIGN
+  mk('c-monthly', 'bar', {
+    labels: mons.map(function(m){ return m[0].toUpperCase() + m.slice(1); }),
+    datasets: [
+      { label: 'Contacts', data: mons.map(function(m){ return D.by_month[m].n; }),
+        backgroundColor: 'rgba(37,99,235,.25)', borderRadius: 4, yAxisID: 'y' },
+      { label: 'Converted', data: mons.map(function(m){ return D.by_month[m].c; }),
+        backgroundColor: 'rgba(22,163,74,.6)', borderRadius: 4, yAxisID: 'y' },
+      { label: 'Conv Rate %', data: mons.map(function(m){ return D.by_month[m].r; }),
+        type: 'line', borderColor: '#d97706', pointRadius: 5, yAxisID: 'y2', tension: .3, borderWidth: 2 }
+    ]
+  }, { scales: {
+    x: { ticks: { color: '#94a3b8' }, grid: { color: GC } },
+    y: { ticks: { color: '#94a3b8' }, grid: { color: GC } },
+    y2: { position: 'right', grid: { display: false },
+      ticks: { color: '#d97706', callback: function(v){ return v + '%'; } } }
+  }});
+
+  var camKeys = Object.keys(D.by_cam);
+  mk('c-freq', 'line', {
+    labels: camKeys,
+    datasets: [{ label: 'Conv Rate %', data: camKeys.map(function(k){ return D.by_cam[k].r; }),
+      borderColor: '#dc2626', backgroundColor: 'rgba(220,38,38,.08)', fill: true,
+      tension: .3, pointRadius: 5, borderWidth: 2 }]
+  }, { plugins: { legend: { display: false } },
+    scales: {
+      x: { ticks: { color: '#94a3b8' }, grid: { color: GC } },
+      y: { ticks: { color: '#94a3b8', callback: function(v){ return v + '%'; } }, grid: { color: GC } }
+  }});
+
+  var durKeys = Object.keys(D.by_dur);
+  mk('c-dur', 'bar', {
+    labels: durKeys,
+    datasets: [{ label: 'Conv Rate %', data: durKeys.map(function(k){ return D.by_dur[k].r; }),
+      backgroundColor: durKeys.map(function(k){ return rateColor(D.by_dur[k].r) + 'bb'; }),
+      borderRadius: 5 }]
+  }, { plugins: { legend: { display: false } },
+    scales: {
+      x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: GC } },
+      y: { ticks: { color: '#94a3b8', callback: function(v){ return v + '%'; } }, grid: { color: GC } }
+  }});
+
+  // SEGMENTS
+  var jobs = Object.entries(D.by_job).sort(function(a,b){ return b[1].r - a[1].r; });
+  var jmax = jobs[0][1].r;
+  document.getElementById('job-bars').innerHTML = jobs.map(function(j){ return pbar(j[0], j[1].r, jmax, rateColor(j[1].r)); }).join('');
+
+  var ages = Object.entries(D.by_age);
+  mk('c-age', 'bar', {
+    labels: ages.map(function(a){ return a[0]; }),
+    datasets: [
+      { label: 'Contacts', data: ages.map(function(a){ return a[1].n; }),
+        backgroundColor: 'rgba(37,99,235,.3)', borderRadius: 4, yAxisID: 'y' },
+      { label: 'Conv Rate %', data: ages.map(function(a){ return a[1].r; }),
+        type: 'line', borderColor: '#16a34a', pointRadius: 5, yAxisID: 'y2', tension: .3, borderWidth: 2 }
+    ]
+  }, { scales: {
+    x: { ticks: { color: '#94a3b8' }, grid: { color: GC } },
+    y: { ticks: { color: '#94a3b8' }, grid: { color: GC } },
+    y2: { position: 'right', grid: { display: false },
+      ticks: { color: '#16a34a', callback: function(v){ return v + '%'; } } }
+  }});
+
+  var edus = Object.entries(D.by_edu).sort(function(a,b){ return b[1].r - a[1].r; });
+  var emax = edus[0][1].r;
+  document.getElementById('edu-bars').innerHTML = edus.map(function(e){ return pbar(e[0].replace(/\./g,' '), e[1].r, emax, rateColor(e[1].r)); }).join('');
+
+  mk('c-donut', 'doughnut', {
+    labels: ['Not Subscribed (88.7%)', 'Subscribed (11.3%)'],
+    datasets: [{ data: [36548, 4640],
+      backgroundColor: ['rgba(220,38,38,.2)', 'rgba(22,163,74,.75)'],
+      borderColor: ['#dc2626', '#16a34a'], borderWidth: 2 }]
+  }, { cutout: '62%', plugins: { legend: { position: 'bottom', labels: { color: '#64748b', font: { size: 11 }, padding: 12 } } },
+    scales: {}
+  });
+
+  // RECOMMENDATIONS
+  var recs = [
+    { cls:'red',  pri:'High Priority',   pc:'r', title:'Switch to Cellular Outreach',
+      body:'Cellular converts at 14.7% vs telephone at 5.2% — nearly 3&times; better. Reallocating telephone capacity to cellular adds ~1,200 conversions per cycle at no extra cost.',
+      stat:'Cellular: 14.7% &middot; Telephone: 5.2% &middot; Gap: +9.5pp' },
+    { cls:'red',  pri:'High Priority',   pc:'r', title:'Re-engage Previous Successes First',
+      body:'Customers with a prior successful campaign convert at 65.1% — 7&times; the average. Build a warm-prospect list from every campaign\'s conversions and contact them first next cycle.',
+      stat:'Prev. Success: 65.1% &middot; No History: 8.8%' },
+    { cls:'amber',pri:'Medium Priority', pc:'a', title:'Cap Contacts at 3 Per Prospect',
+      body:'Conversion drops from 13% on the first call to 3.1% after 11+ calls. Over-contacting wastes agent time and hurts brand perception. Stop at 3 attempts and redirect to fresh leads.',
+      stat:'1 Call: 13% &rarr; 11+ Calls: 3.1%' },
+    { cls:'amber',pri:'Medium Priority', pc:'a', title:'Focus on Mar, Sep, Oct &amp; Dec',
+      body:'These months convert at 44&ndash;51%. May receives 33% of all campaign volume but only converts at 6.4%. Shift campaign volume from May toward Q4 and early Q1.',
+      stat:'March: 50.5% &middot; May: 6.4% &middot; Difference: 44pp' },
+    { cls:'amber',pri:'Medium Priority', pc:'a', title:'Keep Calls Over 5 Minutes',
+      body:'Calls under 1 minute convert at near zero. Calls over 10 minutes convert at 48.6%. Train agents on discovery questions and objection handling to extend conversations.',
+      stat:'5&ndash;10 min: 18.6% &middot; 10+ min: 48.6%' },
+    { cls:'green',pri:'Optimise',         pc:'g', title:'Target Students and Retirees',
+      body:'Students convert at 31.4% and retirees at 25.2% — well above the 11.3% average. Design campaigns with tailored messaging for these two high-converting segments.',
+      stat:'Students: 31.4% &middot; Retirees: 25.2%' }
+  ];
+  document.getElementById('recs').innerHTML = recs.map(function(r){
+    return '<div class="rec ' + r.cls + '">' +
+      '<div class="rec-pri ' + r.pc + '">' + r.pri + '</div>' +
+      '<div class="rec-title">' + r.title + '</div>' +
+      '<div class="rec-body">' + r.body + '</div>' +
+      '<div class="rec-stat">' + r.stat + '</div></div>';
+  }).join('');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  if (typeof Chart === 'undefined') {
+    document.querySelectorAll('.ch').forEach(function(el){
+      el.style.display = 'flex';
+      el.style.alignItems = 'center';
+      el.style.justifyContent = 'center';
+      el.innerHTML = '<span style="color:#94a3b8;font-size:.8rem">Chart.js did not load &mdash; please check your internet connection.</span>';
+    });
+    return;
+  }
+  buildDashboard();
+});
+</script>
+</body>
+</html>
